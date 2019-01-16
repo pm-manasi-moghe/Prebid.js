@@ -18,6 +18,10 @@ describe('PubMatic adapter', function () {
   let validnativeBidImpressionWithRequiredParam;
   let nativeBidImpressionWithoutRequiredParams;
   let validnativeBidImpressionWithAllParams;
+  let bannerAndVideoBidRequests;
+  let bannerAndNativeBidRequests;
+  let videoAndNativeBidRequests;
+  let bannerVideoAndNativeBidRequests;
 
   beforeEach(function () {
     bidRequests = [
@@ -81,8 +85,7 @@ describe('PubMatic adapter', function () {
       }
     ];
 
-    multipleMediaRequests =
-    [
+    multipleMediaRequests = [
       {
         bidder: 'pubmatic',
         params: {
@@ -271,6 +274,232 @@ describe('PubMatic adapter', function () {
         adSlot: '/43743431/NativeAutomationPrebid@1x1',
       }
     }];
+
+    bannerAndVideoBidRequests = [
+      {
+        code: 'div-banner-video',
+        mediaTypes: {
+          video: {
+            playerSize: [640, 480],
+            context: 'instream'
+          },
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
+        bidder: 'pubmatic',
+        params: {
+          publisherId: '301',
+          adSlot: '/15671365/DMDemo@300x250:0',
+          kadfloor: '1.2',
+          pmzoneid: 'aabc, ddef',
+          kadpageurl: 'www.publisher.com',
+          yob: '1986',
+          gender: 'M',
+          lat: '12.3',
+          lon: '23.7',
+          wiid: '1234567890',
+          profId: '100',
+          verId: '200',
+          currency: 'AUD',
+          dctr: 'key1:val1,val2|key2:val1',
+          video: {
+            mimes: ['video/mp4', 'video/x-flv'],
+            skippable: true,
+            minduration: 5,
+            maxduration: 30,
+            startdelay: 15,
+            playbackmethod: [1, 3],
+            api: [1, 2],
+            protocols: [2, 3],
+            w: 640,
+            h: 480,
+            battr: [13, 14],
+            linearity: 1,
+            placement: 2,
+            minbitrate: 100,
+            maxbitrate: 4096
+          }
+        },
+        placementCode: '/19968336/header-bid-tag-1',
+        sizes: [[728, 90]],
+        bidId: '23acc48ad47af5',
+        requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+        bidderRequestId: '1c56ad30b9b8ca8',
+        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+      }
+    ];
+
+    bannerAndNativeBidRequests = [
+      {
+        code: 'div-banner-native',
+        mediaTypes: {
+          native: {
+            title: {
+              required: true,
+              length: 80
+            },
+            image: {
+              required: true,
+              sizes: [300, 250]
+            },
+            sponsoredBy: {
+              required: true
+            }
+          },
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
+        nativeParams: {
+          title: { required: true, length: 80 },
+          image: { required: true, sizes: [300, 250] },
+          sponsoredBy: { required: true }
+        },
+        bidder: 'pubmatic',
+        params: {
+          publisherId: '301',
+          adSlot: '/15671365/DMDemo@300x250:0',
+          kadfloor: '1.2',
+          pmzoneid: 'aabc, ddef',
+          kadpageurl: 'www.publisher.com',
+          yob: '1986',
+          gender: 'M',
+          lat: '12.3',
+          lon: '23.7',
+          wiid: '1234567890',
+          profId: '100',
+          verId: '200',
+          currency: 'AUD',
+          dctr: 'key1:val1,val2|key2:val1'
+        },
+        placementCode: '/19968336/header-bid-tag-1',
+        sizes: [[728, 90]],
+        bidId: '23acc48ad47af5',
+        requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+        bidderRequestId: '1c56ad30b9b8ca8',
+        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+      }
+    ];
+
+    videoAndNativeBidRequests = [
+      {
+        code: 'div-video-native',
+        mediaTypes: {
+          native: {
+            title: {
+              required: true,
+              length: 80
+            },
+            image: {
+              required: true,
+              sizes: [300, 250]
+            },
+            sponsoredBy: {
+              required: true
+            }
+          },
+          video: {
+            playerSize: [640, 480],
+            context: 'instream'
+          }
+        },
+        nativeParams: {
+          title: { required: true, length: 80 },
+          image: { required: true, sizes: [300, 250] },
+          sponsoredBy: { required: true }
+        },
+        bidder: 'pubmatic',
+        params: {
+          publisherId: '301',
+          adSlot: '/15671365/DMDemo@300x250:0',
+          video: {
+            mimes: ['video/mp4', 'video/x-flv'],
+            skippable: true,
+            minduration: 5,
+            maxduration: 30,
+            startdelay: 15,
+            playbackmethod: [1, 3],
+            api: [1, 2],
+            protocols: [2, 3],
+            w: 640,
+            h: 480,
+            battr: [13, 14],
+            linearity: 1,
+            placement: 2,
+            minbitrate: 100,
+            maxbitrate: 4096
+          }
+        },
+        placementCode: '/19968336/header-bid-tag-1',
+        sizes: [[728, 90]],
+        bidId: '23acc48ad47af5',
+        requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+        bidderRequestId: '1c56ad30b9b8ca8',
+        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+      }
+    ];
+
+    bannerVideoAndNativeBidRequests = [
+      {
+        code: 'div-video-native',
+        mediaTypes: {
+          native: {
+            title: {
+              required: true,
+              length: 80
+            },
+            image: {
+              required: true,
+              sizes: [300, 250]
+            },
+            sponsoredBy: {
+              required: true
+            }
+          },
+          video: {
+            playerSize: [640, 480],
+            context: 'instream'
+          },
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        },
+        nativeParams: {
+          title: { required: true, length: 80 },
+          image: { required: true, sizes: [300, 250] },
+          sponsoredBy: { required: true }
+        },
+        bidder: 'pubmatic',
+        params: {
+          publisherId: '301',
+          adSlot: '/15671365/DMDemo@300x250:0',
+          video: {
+            mimes: ['video/mp4', 'video/x-flv'],
+            skippable: true,
+            minduration: 5,
+            maxduration: 30,
+            startdelay: 15,
+            playbackmethod: [1, 3],
+            api: [1, 2],
+            protocols: [2, 3],
+            w: 640,
+            h: 480,
+            battr: [13, 14],
+            linearity: 1,
+            placement: 2,
+            minbitrate: 100,
+            maxbitrate: 4096
+          }
+        },
+        placementCode: '/19968336/header-bid-tag-1',
+        sizes: [[728, 90]],
+        bidId: '23acc48ad47af5',
+        requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+        bidderRequestId: '1c56ad30b9b8ca8',
+        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
+      }
+    ];
 
     bidResponses = {
       'body': {
@@ -496,6 +725,11 @@ describe('PubMatic adapter', function () {
 
         /* case 2 - size passed in adslot as well as in sizes array */
         bidRequests[0].sizes = [[300, 600], [300, 250]];
+        bidRequests[0].mediaTypes = {
+          banner: {
+            sizes: [[300, 600], [300, 250]]
+          }
+        };
         request = spec.buildRequests(bidRequests);
         data = JSON.parse(request.data);
 
@@ -505,6 +739,11 @@ describe('PubMatic adapter', function () {
         /* case 3 - size passed in sizes but not in adslot */
         bidRequests[0].params.adSlot = '/15671365/DMDemo';
         bidRequests[0].sizes = [[300, 250], [300, 600]];
+        bidRequests[0].mediaTypes = {
+          banner: {
+            sizes: [[300, 250], [300, 600]]
+          }
+        };
         request = spec.buildRequests(bidRequests);
         data = JSON.parse(request.data);
 
@@ -1218,6 +1457,145 @@ describe('PubMatic adapter', function () {
         expect(data.imp[0].tagid).to.equal('/43743431/NativeAutomationPrebid');
         expect(data.imp[0]['native']['request']).to.exist.and.to.be.an('string');
         expect(data.imp[0]['native']['request']).to.exist.and.to.equal(validnativeBidImpressionWithAllParams.native.request);
+      });
+
+	    it('Request params - should handle banner and video format in single adunit', function() {
+        let request = spec.buildRequests(bannerAndVideoBidRequests);
+        let data = JSON.parse(request.data);
+        data = data.imp[0];
+        expect(data.banner).to.exist;
+        expect(data.banner.w).to.equal(300);
+        expect(data.banner.h).to.equal(250);
+        expect(data.banner.format).to.exist;
+        expect(data.banner.format.length).to.equal(bannerAndVideoBidRequests[0].mediaTypes.banner.sizes.length);
+
+        // Case: when size is not present in adslo
+        bannerAndVideoBidRequests[0].params.adSlot = '/15671365/DMDemo';
+        request = spec.buildRequests(bannerAndVideoBidRequests);
+        data = JSON.parse(request.data);
+        data = data.imp[0];
+        expect(data.banner).to.exist;
+        expect(data.banner.w).to.equal(bannerAndVideoBidRequests[0].mediaTypes.banner.sizes[0][0]);
+        expect(data.banner.h).to.equal(bannerAndVideoBidRequests[0].mediaTypes.banner.sizes[0][1]);
+        expect(data.banner.format).to.exist;
+        expect(data.banner.format.length).to.equal(bannerAndVideoBidRequests[0].mediaTypes.banner.sizes.length - 1);
+
+        expect(data.video).to.exist;
+        expect(data.video.w).to.equal(bannerAndVideoBidRequests[0].mediaTypes.video.playerSize[0]);
+        expect(data.video.h).to.equal(bannerAndVideoBidRequests[0].mediaTypes.video.playerSize[1]);
+      });
+
+      it('Request params - should not contain banner imp if mediaTypes.banner is not present and sizes is specified in bid.sizes', function() {
+        delete bannerAndVideoBidRequests[0].mediaTypes.banner;
+        bannerAndVideoBidRequests[0].params.sizes = [300, 250];
+
+        let request = spec.buildRequests(bannerAndVideoBidRequests);
+        let data = JSON.parse(request.data);
+        data = data.imp[0];
+        expect(data.banner).to.not.exist;
+      });
+
+      it('Request params - should handle banner and native format in single adunit', function() {
+        let request = spec.buildRequests(bannerAndNativeBidRequests);
+        let data = JSON.parse(request.data);
+        data = data.imp[0];
+
+        expect(data.banner).to.exist;
+        expect(data.banner.w).to.equal(300);
+        expect(data.banner.h).to.equal(250);
+        expect(data.banner.format).to.exist;
+        expect(data.banner.format.length).to.equal(bannerAndNativeBidRequests[0].mediaTypes.banner.sizes.length);
+
+        expect(data.native).to.exist;
+        expect(data.native.request).to.exist;
+      });
+
+      it('Request params - should handle video and native format in single adunit', function() {
+        let request = spec.buildRequests(videoAndNativeBidRequests);
+        let data = JSON.parse(request.data);
+        data = data.imp[0];
+
+        expect(data.video).to.exist;
+        expect(data.video.w).to.equal(bannerAndVideoBidRequests[0].mediaTypes.video.playerSize[0]);
+        expect(data.video.h).to.equal(bannerAndVideoBidRequests[0].mediaTypes.video.playerSize[1]);
+
+        expect(data.native).to.exist;
+        expect(data.native.request).to.exist;
+      });
+
+      it('Request params - should handle banner, video and native format in single adunit', function() {
+        let request = spec.buildRequests(bannerVideoAndNativeBidRequests);
+        let data = JSON.parse(request.data);
+        data = data.imp[0];
+
+        expect(data.banner).to.exist;
+        expect(data.banner.w).to.equal(300);
+        expect(data.banner.h).to.equal(250);
+        expect(data.banner.format).to.exist;
+        expect(data.banner.format.length).to.equal(bannerAndNativeBidRequests[0].mediaTypes.banner.sizes.length);
+
+        expect(data.video).to.exist;
+        expect(data.video.w).to.equal(bannerAndVideoBidRequests[0].mediaTypes.video.playerSize[0]);
+        expect(data.video.h).to.equal(bannerAndVideoBidRequests[0].mediaTypes.video.playerSize[1]);
+
+        expect(data.native).to.exist;
+        expect(data.native.request).to.exist;
+      });
+
+      it('Request params - should not add banner object if mediaTypes.banner is missing, but adunits.sizes is present', function() {
+        delete bannerAndNativeBidRequests[0].mediaTypes.banner;
+        bannerAndNativeBidRequests[0].sizes = [729, 90];
+
+        let request = spec.buildRequests(bannerAndNativeBidRequests);
+        let data = JSON.parse(request.data);
+        data = data.imp[0];
+
+        expect(data.banner).to.not.exist;
+
+        expect(data.native).to.exist;
+        expect(data.native.request).to.exist;
+      });
+
+      it('Request params - banner and native multiformat request - should not have native object incase of invalid config present', function() {
+        bannerAndNativeBidRequests[0].mediaTypes.native = {
+          title: { required: true },
+          image: { required: true },
+          sponsoredBy: { required: true },
+          clickUrl: { required: true }
+        };
+        bannerAndNativeBidRequests[0].nativeParams = {
+          title: { required: true },
+          image: { required: true },
+          sponsoredBy: { required: true },
+          clickUrl: { required: true }
+        }
+        let request = spec.buildRequests(bannerAndNativeBidRequests);
+        let data = JSON.parse(request.data);
+        data = data.imp[0];
+
+        expect(data.banner).to.exist;
+        expect(data.native).to.not.exist;
+      });
+
+      it('Request params - video and native multiformat request - should not have native object incase of invalid config present', function() {
+        videoAndNativeBidRequests[0].mediaTypes.native = {
+          title: { required: true },
+          image: { required: true },
+          sponsoredBy: { required: true },
+          clickUrl: { required: true }
+        };
+        videoAndNativeBidRequests[0].nativeParams = {
+          title: { required: true },
+          image: { required: true },
+          sponsoredBy: { required: true },
+          clickUrl: { required: true }
+        }
+        let request = spec.buildRequests(videoAndNativeBidRequests);
+        let data = JSON.parse(request.data);
+        data = data.imp[0];
+
+        expect(data.video).to.exist;
+        expect(data.native).to.not.exist;
       });
   	});
 
