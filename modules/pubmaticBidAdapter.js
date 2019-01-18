@@ -2,7 +2,6 @@ import * as utils from 'src/utils';
 import { registerBidder } from 'src/adapters/bidderFactory';
 import { BANNER, VIDEO, NATIVE } from 'src/mediaTypes';
 import {config} from 'src/config';
-const constants = require('src/constants.json');
 
 const BIDDER_CODE = 'pubmatic';
 const ENDPOINT = '//hbopenbid.pubmatic.com/translator?source=prebid-client';
@@ -238,9 +237,15 @@ function _parseAdSlot(bid) {
     bid.params.height = parseInt(splits[1]);
     // delete bid.sizes;
   } else {
-    bid.params.width = parseInt(bid.mediaTypes.banner.sizes[0][0]);
-    bid.params.height = parseInt(bid.mediaTypes.banner.sizes[0][1]);
-    bid.mediaTypes.banner.sizes = bid.mediaTypes.banner.sizes.splice(1, bid.mediaTypes.banner.sizes.length - 1);
+    if (bid.hasOwnProperty('mediaTypes') &&
+         bid.mediaTypes.hasOwnProperty(BANNER) &&
+          bid.mediaTypes.banner.hasOwnProperty('sizes')) {
+      bid.params.width = parseInt(bid.mediaTypes.banner.sizes[0][0]);
+      bid.params.height = parseInt(bid.mediaTypes.banner.sizes[0][1]);
+      bid.mediaTypes.banner.sizes = bid.mediaTypes.banner.sizes.splice(1, bid.mediaTypes.banner.sizes.length - 1);
+    } else {
+      utils.logWarn(BIDDER_CODE + ' error: Missing mediaTypes.banner in adSlot: ' + bid.params.adSlot);
+    }
   } /* else if (sizesArrayExists) {
     bid.params.width = parseInt(bid.sizes[0][0]);
     bid.params.height = parseInt(bid.sizes[0][1]);
@@ -592,10 +597,72 @@ function _createNativeRequest(params) {
   return nativeRequestObject;
 }
 
+function _createBannerRequest(bid) {
+  var sizes = bid.mediaTypes.banner.sizes;
+  var format = [];
+  var bannerObj;
+
+  if (sizes !== undefined && utils.isArray(sizes)) {
+    bannerObj = {};
+    if (!bid.params.width && !bid.params.height) {
+      bannerObj.w = parseInt(sizes[0][0]);
+      bannerObj.h = parseInt(sizes[0][1]);
+      sizes = sizes.splice(1, sizes.length - 1);
+    } else {
+      bannerObj.w = bid.params.width;
+      bannerObj.h = bid.params.height;
+    }
+    if (sizes.length > 0) {
+      format = [];
+      sizes.forEach(function (size) {
+        format.push({ w: size[0], h: size[1] });
+      });
+      bannerObj.format = format;
+    }
+    bannerObj.pos = 0;
+    bannerObj.topframe = utils.inIframe() ? 0 : 1;
+  } else {
+    utils.logWarn(BIDDER_CODE + 'Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the banner impression in the adunit.');
+    bannerObj = undefined;
+  }
+  return bannerObj;
+}
+
+function _createVideoRequest(bid) {
+  var videoData = bid.params.video;
+  var videoObj;
+
+  if (videoData !== undefined) {
+    videoObj = {};
+    for (var key in VIDEO_CUSTOM_PARAMS) {
+      if (videoData.hasOwnProperty(key)) {
+        videoObj[key] = _checkParamDataType(key, videoData[key], VIDEO_CUSTOM_PARAMS[key]);
+      }
+    }
+    // read playersize and assign to h and w.
+    if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
+      videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0][0]);
+      videoObj.h = parseInt(bid.mediaTypes.video.playerSize[0][1]);
+    } else if (utils.isNumber(bid.mediaTypes.video.playerSize[0])) {
+      videoObj.w = parseInt(bid.mediaTypes.video.playerSize[0]);
+      videoObj.h = parseInt(bid.mediaTypes.video.playerSize[1]);
+    }
+    if (bid.params.video.hasOwnProperty('skippable')) {
+      videoObj.ext = {
+        'video_skippable': bid.params.video.skippable ? 1 : 0
+      };
+    }
+  } else {
+    videoObj = undefined;
+    utils.logWarn(BIDDER_CODE + 'Error: Video config params missing for adunit: ' + bid.params.adUnit + ' with mediaType set as video. Ignoring video impression in the adunit.');
+  }
+  return videoObj;
+}
+
 function _createImpressionObject(bid, conf) {
   var impObj = {};
-  var bannerObj = {};
-  var videoObj = {};
+  var bannerObj;
+  var videoObj;
   var nativeObj = {};
   var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
   var mediaTypes = '';
@@ -616,31 +683,10 @@ function _createImpressionObject(bid, conf) {
     for (mediaTypes in bid.mediaTypes) {
       switch (mediaTypes) {
         case BANNER:
-          bannerObj = {};
-          sizes = bid.mediaTypes.banner.sizes;
-          if (sizes !== undefined && utils.isArray(sizes)) {
-            if (!bid.params.width && !bid.params.height) {
-              bannerObj.w = sizes[0][0];
-              bannerObj.h = sizes[0][1];
-              sizes = sizes.splice(1, sizes.length - 1);
-            } else {
-              bannerObj.w = bid.params.width;
-              bannerObj.h = bid.params.height;
-            }
-            if (sizes.length > 0) {
-              format = [];
-              sizes.forEach(function (size) {
-                format.push({ w: size[0], h: size[1] });
-              });
-              bannerObj.format = format;
-            }
-          } else {
-            utils.logWarn(BIDDER_CODE + 'Error: mediaTypes.banner.size missing for adunit: ' + bid.params.adUnit + '. Ignoring the adunit.');
+          bannerObj = _createBannerRequest(bid);
+          if (bannerObj !== undefined) {
+            impObj.banner = bannerObj;
           }
-          bannerObj.pos = 0;
-          bannerObj.topframe = utils.inIframe() ? 0 : 1;
-          impObj.banner = bannerObj;
-
           break;
         case NATIVE:
           nativeObj['request'] = JSON.stringify(_createNativeRequest(bid.nativeParams));
@@ -649,33 +695,11 @@ function _createImpressionObject(bid, conf) {
           } else {
             utils.logWarn(BIDDER_CODE + 'Error: Error in Native adunit ' + bid.params.adUnit + '. Ignoring the adunit. Refer to ' + PREBID_NATIVE_HELP_LINK + ' for more details.');
           }
-
           break;
         case VIDEO:
-          var videoData = bid.params.video;
-          if (videoData !== undefined) {
-            for (var key in VIDEO_CUSTOM_PARAMS) {
-              if (videoData.hasOwnProperty(key)) {
-                videoObj[key] = _checkParamDataType(key, videoData[key], VIDEO_CUSTOM_PARAMS[key]);
-              }
-            }
-            // read playersize and assign to h and w.
-            if (utils.isArray(bid.mediaTypes.video.playerSize[0])) {
-              videoObj.w = bid.mediaTypes.video.playerSize[0][0];
-              videoObj.h = bid.mediaTypes.video.playerSize[0][1];
-            } else if (utils.isNumber(bid.mediaTypes.video.playerSize[0])) {
-              videoObj.w = bid.mediaTypes.video.playerSize[0];
-              videoObj.h = bid.mediaTypes.video.playerSize[1];
-            }
-            if (bid.params.video.hasOwnProperty('skippable')) {
-              videoObj.ext = {
-                'video_skippable': bid.params.video.skippable ? 1 : 0
-              };
-            }
-
+          videoObj = _createVideoRequest(bid);
+          if (videoObj !== undefined) {
             impObj.video = videoObj;
-          } else {
-            utils.logWarn(BIDDER_CODE + 'Error: Video config params missing for adunit: ' + bid.params.adUnit + ' with mediaType set as video. Ignoring the adunit.');
           }
           break;
       }
@@ -762,8 +786,9 @@ function _handleEids(payload) {
 }
 // TODO: need a better way to identify mediaType from response.
 function _checkMediaType(adm, newBid) {
+  // Create a regex here to check the strings
   var admStr = '';
-  if (adm.indexOf('<VAST version=>') >= 0) {
+  if (adm.indexOf('<VAST version=') >= 0) {
     newBid.mediaType = VIDEO;
   } else if (adm.indexOf('span class="PubAPIAd"') >= 0) {
     newBid.mediaType = BANNER;

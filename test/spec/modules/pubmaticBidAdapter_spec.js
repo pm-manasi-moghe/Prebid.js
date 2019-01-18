@@ -22,11 +22,18 @@ describe('PubMatic adapter', function () {
   let bannerAndNativeBidRequests;
   let videoAndNativeBidRequests;
   let bannerVideoAndNativeBidRequests;
+  let bannerBidResponse;
+  let videoBidResponse;
 
   beforeEach(function () {
     bidRequests = [
       {
         bidder: 'pubmatic',
+        mediaTypes: {
+          banner: {
+            sizes: [[728, 90], [160, 600]]
+          }
+        },
         params: {
           publisherId: '301',
           adSlot: '/15671365/DMDemo@300x250:0',
@@ -63,6 +70,7 @@ describe('PubMatic adapter', function () {
           }
         },
         bidder: 'pubmatic',
+        bidId: '22bddb28db77d',
         params: {
           publisherId: '5890',
           adSlot: 'Div1@0x0', // ad_id or tagid
@@ -575,6 +583,44 @@ describe('PubMatic adapter', function () {
     validnativeBidImpressionWithAllParams = {
       native: {
         'request': '{"assets":[{"id":1,"required":1,"title":{"len":80,"ext":{"title1":"title2"}}},{"id":3,"required":1,"img":{"type":1,"w":50,"h":50}},{"id":2,"required":1,"img":{"type":3,"w":728,"h":90,"mimes":["image/png","image/gif"],"ext":{"image1":"image2"}}},{"id":4,"required":1,"data":{"type":1,"len":10,"ext":{"sponsor1":"sponsor2"}}},{"id":5,"required":1,"data":{"type":2,"len":10,"ext":{"body1":"body2"}}},{"id":13,"required":1,"data":{"type":3,"len":10,"ext":{"rating1":"rating2"}}},{"id":14,"required":1,"data":{"type":4,"len":10,"ext":{"likes1":"likes2"}}},{"id":15,"required":1,"data":{"type":5,"len":10,"ext":{"downloads1":"downloads2"}}},{"id":16,"required":1,"data":{"type":6,"len":10,"ext":{"price1":"price2"}}},{"id":17,"required":1,"data":{"type":7,"len":10,"ext":{"saleprice1":"saleprice2"}}},{"id":18,"required":1,"data":{"type":8,"len":10,"ext":{"phone1":"phone2"}}},{"id":19,"required":1,"data":{"type":9,"len":10,"ext":{"address1":"address2"}}},{"id":20,"required":1,"data":{"type":10,"len":10,"ext":{"desc21":"desc22"}}},{"id":21,"required":1,"data":{"type":11,"len":10,"ext":{"displayurl1":"displayurl2"}}}]}'
+      }
+    }
+
+    bannerBidResponse = {
+      'body': {
+        'id': '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
+        'seatbid': [{
+          'bid': [{
+            'id': '74858439-49D7-4169-BA5D-44A046315B2F',
+            'impid': '23acc48ad47af5',
+            'price': 1.3,
+            'adm': '<span class="PubAPIAd"  id="4E733404-CC2E-48A2-BC83-4DD5F38FE9BB"><script type="text/javascript"> document.writeln(\'<iframe width="300" scrolling="no" height="250" frameborder="0" name="iframe0" allowtransparency="true" marginheight="0" marginwidth="0" vspace="0" hspace="0" src="http://ads.pubmatic.com/AdTag/dummyImage.png"></iframe>\');</script><iframe width="0" scrolling="no" height="0" frameborder="0" src="http://aktrack.pubmatic.com/AdServer/AdDisplayTrackerServlet?pubId=5890" style="position:absolute;top:-15000px;left:-15000px" vspace="0" hspace="0" marginwidth="0" marginheight="0" allowtransparency="true" name="pbeacon"></iframe></span> <!-- PubMatic Ad Ends -->',
+            'h': 250,
+            'w': 300,
+            'ext': {
+              'deal_channel': 6
+            }
+          }]
+        }]
+      }
+    };
+
+    videoBidResponse = {
+      'body': {
+        'id': '93D3BAD6-E2E2-49FB-9D89-920B1761C865',
+        'seatbid': [{
+          'bid': [{
+            'id': '74858439-49D7-4169-BA5D-44A046315B2F',
+            'impid': '22bddb28db77d',
+            'price': 1.3,
+            'adm': '<VAST version="3.0"><Ad id="601364"><InLine><AdSystem>Acudeo Compatible</AdSystem><AdTitle>VAST 2.0 Instream Test 1</AdTitle><Description>VAST 2.0 Instream Test 1</Description><Impression><![CDATA[http://172.16.4.213/AdServer/AdDisplayTrackerServlet?operId=1&pubId=5890&siteId=47163&adId=1405268&adType=13&adServerId=243&kefact=70.000000&kaxefact=70.000000&kadNetFrequecy=0&kadwidth=0&kadheight=0&kadsizeid=97&kltstamp=1529929473&indirectAdId=0&adServerOptimizerId=2&ranreq=0.1&kpbmtpfact=100.000000&dcId=1&tldId=0&passback=0&svr=MADS1107&ekefact=Ad8wW91TCwCmdG0jlfjXn7Tyzh20hnTVx-m5DoNSep-RXGDr&ekaxefact=Ad8wWwRUCwAGir4Zzl1eF0bKiC-qrCV0D0yp_eE7YizB_BQk&ekpbmtpfact=Ad8wWxRUCwD7qgzwwPE2LnS5-Ou19uO5amJl1YT6-XVFvQ41&imprId=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&oid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&crID=creative-1_1_2&ucrid=160175026529250297&campaignId=17050&creativeId=0&pctr=0.000000&wDSPByrId=511&wDspId=6&wbId=0&wrId=0&wAdvID=3170&isRTB=1&rtbId=EBCA079F-8D7C-45B8-B733-92951F670AA1&pmZoneId=zone1&pageURL=www.yahoo.com&lpu=ae.com]]></Impression><Impression>https://dsptracker.com/{PSPM}</Impression><Error><![CDATA[http://172.16.4.213/track?operId=7&p=5890&s=47163&a=1405268&wa=243&ts=1529929473&wc=17050&crId=creative-1_1_2&ucrid=160175026529250297&impid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&advertiser_id=3170&ecpm=70.000000&er=[ERRORCODE]]]></Error><Error><![CDATA[https://Errortrack.com?p=1234&er=[ERRORCODE]]]></Error><Creatives><Creative AdID="601364"><Linear skipoffset="20%"><TrackingEvents><Tracking event="close"><![CDATA[https://mytracking.com/linear/close]]></Tracking><Tracking event="skip"><![CDATA[https://mytracking.com/linear/skip]]></Tracking><Tracking event="creativeView"><![CDATA[http://172.16.4.213/track?operId=7&p=5890&s=47163&a=1405268&wa=243&ts=1529929473&wc=17050&crId=creative-1_1_2&ucrid=160175026529250297&impid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&advertiser_id=3170&ecpm=70.000000&e=1]]></Tracking><Tracking event="start"><![CDATA[http://172.16.4.213/track?operId=7&p=5890&s=47163&a=1405268&wa=243&ts=1529929473&wc=17050&crId=creative-1_1_2&ucrid=160175026529250297&impid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&advertiser_id=3170&ecpm=70.000000&e=2]]></Tracking><Tracking event="midpoint"><![CDATA[http://172.16.4.213/track?operId=7&p=5890&s=47163&a=1405268&wa=243&ts=1529929473&wc=17050&crId=creative-1_1_2&ucrid=160175026529250297&impid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&advertiser_id=3170&ecpm=70.000000&e=3]]></Tracking><Tracking event="firstQuartile"><![CDATA[http://172.16.4.213/track?operId=7&p=5890&s=47163&a=1405268&wa=243&ts=1529929473&wc=17050&crId=creative-1_1_2&ucrid=160175026529250297&impid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&advertiser_id=3170&ecpm=70.000000&e=4]]></Tracking><Tracking event="thirdQuartile"><![CDATA[http://172.16.4.213/track?operId=7&p=5890&s=47163&a=1405268&wa=243&ts=1529929473&wc=17050&crId=creative-1_1_2&ucrid=160175026529250297&impid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&advertiser_id=3170&ecpm=70.000000&e=5]]></Tracking><Tracking event="complete"><![CDATA[http://172.16.4.213/track?operId=7&p=5890&s=47163&a=1405268&wa=243&ts=1529929473&wc=17050&crId=creative-1_1_2&ucrid=160175026529250297&impid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&advertiser_id=3170&ecpm=70.000000&e=6]]></Tracking></TrackingEvents><Duration>00:00:04</Duration><VideoClicks><ClickTracking><![CDATA[http://172.16.4.213/track?operId=7&p=5890&s=47163&a=1405268&wa=243&ts=1529929473&wc=17050&crId=creative-1_1_2&ucrid=160175026529250297&impid=48F73E1A-7F23-443D-A53C-30EE6BBF5F7F&advertiser_id=3170&ecpm=70.000000&e=99]]></ClickTracking><ClickThrough>https://www.pubmatic.com</ClickThrough></VideoClicks><MediaFiles><MediaFile delivery="progressive" type="video/mp4" bitrate="500" width="400" height="300" scalable="true" maintainAspectRatio="true"><![CDATA[https://stagingnyc.pubmatic.com:8443/video/Shashank/mediaFileHost/media/mp4-sample-2.mp4]]></MediaFile></MediaFiles></Linear></Creative></Creatives></InLine></Ad></VAST>',
+            'h': 250,
+            'w': 300,
+            'ext': {
+              'deal_channel': 6
+            }
+          }]
+        }]
       }
     }
   });
@@ -1756,7 +1802,28 @@ describe('PubMatic adapter', function () {
         expect(response[0].native.image.width).to.exist;
         expect(response[0].native.sponsoredBy).to.exist.and.to.be.an('string');
         expect(response[0].native.clickUrl).to.exist.and.to.be.an('string');
-      })
+      });
+
+      it('should check for valid banner mediaType in case of multiformat request', function() {
+        let request = spec.buildRequests(bidRequests);
+        let response = spec.interpretResponse(bannerBidResponse, request);
+
+        expect(response[0].mediaType).to.equal('banner');
+      });
+
+      it('should check for valid video mediaType in case of multiformat request', function() {
+        let request = spec.buildRequests(videoBidRequests);
+        let response = spec.interpretResponse(videoBidResponse, request);
+
+        expect(response[0].mediaType).to.equal('video');
+      });
+
+      it('should check for valid native mediaType in case of multiformat request', function() {
+        let request = spec.buildRequests(nativeBidRequests);
+        let response = spec.interpretResponse(nativeBidResponse, request);
+
+        expect(response[0].mediaType).to.equal('native');
+      });
     });
   });
 });
