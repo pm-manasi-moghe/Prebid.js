@@ -158,6 +158,8 @@ function getCustParams(bid, options) {
 
   const optCustParams = deepAccess(options, 'params.cust_params');
   let customParams = Object.assign({},
+    { hb_uuid: bid && bid.videoCacheKey },
+    { hb_cache_id: bid && bid.videoCacheKey },
     allTargetingData,
     adserverTargeting,
     optCustParams,
