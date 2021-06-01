@@ -10,6 +10,8 @@ import { submodule } from '../src/hook.js'
 import { getStorageManager } from '../src/storageManager.js'
 import { deepSetValue, deepAccess, isFn, mergeDeep, logError } from '../src/utils.js'
 import includes from 'core-js-pure/features/array/includes.js'
+import { config } from '../src/config.js';
+
 const MODULE_NAME = 'permutive'
 
 export const storage = getStorageManager(null, MODULE_NAME)
@@ -125,6 +127,43 @@ function getDefaultBidderFn (bidder) {
       }
 
       return bid
+    },
+    pubmatic: function(bid, data, acEnabled) {
+      let segments = [];
+      var existingData = config.getBidderConfig(); // read existing bidder level configs if any
+      var dataUpdated = false;
+      if (Object.keys(existingData).length > 0) {
+        existingData = existingData['pubmatic'];
+        dataUpdated = existingData.isDataUpdated || false;
+      }
+
+      if (!dataUpdated) {
+        existingData = getNestedData(existingData, 'ortb2', 'user', 'data', 'segment');
+        segments = existingData ? segments.concat(existingData) : [];
+        // add AC specific segments
+        if (acEnabled && data.ac && data.ac.length > 0) {
+          for (var index in data.ac) {
+            segments = segments.concat({id: data.ac[index]});
+          }
+        }
+
+        if (!dataUpdated && segments && segments.length > 0) {
+          window['pbjs'].setBidderConfig({
+           bidders: ['pubmatic'],
+            config: {
+              isDataUpdated: true,
+              ortb2: {
+                user: {
+                  data: [{
+                    name: "permutiveDataProvider.com",
+                    segment: segments
+                  }]
+                }
+              }
+            }
+          });
+        }
+      }
     }
   }
 
@@ -184,6 +223,10 @@ export const permutiveSubmodule = {
     })
   },
   init: init
+}
+
+function getNestedData(obj, ...args) {
+  return args.reduce((obj, level) => obj && obj[level], obj);
 }
 
 submodule('realTimeData', permutiveSubmodule)
