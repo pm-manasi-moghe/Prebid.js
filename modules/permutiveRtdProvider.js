@@ -8,7 +8,7 @@
 import { getGlobal } from '../src/prebidGlobal.js'
 import { submodule } from '../src/hook.js'
 import { getStorageManager } from '../src/storageManager.js'
-import { deepSetValue, deepAccess, isFn, mergeDeep, logError } from '../src/utils.js'
+import { deepSetValue, deepAccess, isFn, mergeDeep, logError, getNestedDataFromObject } from '../src/utils.js'
 import includes from 'core-js-pure/features/array/includes.js'
 import { config } from '../src/config.js';
 
@@ -129,35 +129,48 @@ function getDefaultBidderFn (bidder) {
       return bid
     },
     pubmatic: function(bid, data, acEnabled) {
-      let segments = [];
-      var existingData = config.getBidderConfig(); // read existing bidder level configs if any
-      var dataUpdated = false;
-      if (Object.keys(existingData).length > 0) {
-        existingData = existingData['pubmatic'];
-        dataUpdated = existingData.isDataUpdated || false;
-      }
+      var existingData = config.getBidderConfig() && config.getBidderConfig()['pubmatic']; // read existing bidder level configs if any
+      var dataUpdated = existingData && existingData.isDataUpdated || false;
+      var permutiveId = "permutiveDataProvider.com";
+      var prmObject = {
+        name: permutiveId,
+        segment: []
+      };
+      var dt = [];
 
       if (!dataUpdated) {
-        existingData = getNestedData(existingData, 'ortb2', 'user', 'data', 'segment');
-        segments = existingData ? segments.concat(existingData) : [];
-        // add AC specific segments
-        if (acEnabled && data.ac && data.ac.length > 0) {
-          for (var index in data.ac) {
-            segments = segments.concat({id: data.ac[index]});
+        existingData = getNestedDataFromObject(existingData, 'ortb2', 'user', 'data');
+        for (var index in existingData) {
+          if (existingData[index].name) {
+            if (existingData[index].name === permutiveId) { //add data for permutive dataprovider in prmObject
+              prmObject.segment = prmObject.segment.concat(existingData[index]['segment']);
+            } else { // push data for other data providers in respective objects
+              dt.push({
+                name: existingData[index].name,
+                segment: existingData[index].segment
+              })
+            }
+          } else { // if data doesnt have a name specified, add it in separate object
+            dt.push({ segment: existingData[index].segment })
           }
         }
 
-        if (!dataUpdated && segments && segments.length > 0) {
-          window['pbjs'].setBidderConfig({
+        // add AC specific segments in prmObject
+        if (acEnabled && data.ac && data.ac.length > 0) {
+          for (var index in data.ac) {
+            prmObject.segment.push({ id: data.ac[index] });
+          }
+          dt = dt.concat(prmObject);
+        }
+
+        if (!dataUpdated && dt && dt.length > 0) {
+          getGlobal().setBidderConfig({
            bidders: ['pubmatic'],
             config: {
               isDataUpdated: true,
               ortb2: {
                 user: {
-                  data: [{
-                    name: "permutiveDataProvider.com",
-                    segment: segments
-                  }]
+                  data: dt
                 }
               }
             }
@@ -223,10 +236,6 @@ export const permutiveSubmodule = {
     })
   },
   init: init
-}
-
-function getNestedData(obj, ...args) {
-  return args.reduce((obj, level) => obj && obj[level], obj);
 }
 
 submodule('realTimeData', permutiveSubmodule)
