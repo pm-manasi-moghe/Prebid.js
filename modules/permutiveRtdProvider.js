@@ -10,7 +10,6 @@ import { submodule } from '../src/hook.js'
 import { getStorageManager } from '../src/storageManager.js'
 import { deepSetValue, deepAccess, isFn, mergeDeep, logError } from '../src/utils.js'
 import includes from 'core-js-pure/features/array/includes.js'
-import { config } from '../src/config.js';
 
 const MODULE_NAME = 'permutive'
 
@@ -49,6 +48,7 @@ export function initSegments (reqBidsConfigObj, callback, customConfig) {
 
 function setSegments (reqBidsConfigObj, config) {
   const adUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits
+
   const data = getSegments(config.params.maxSegs)
   const utils = { deepSetValue, deepAccess, isFn, mergeDeep }
 
@@ -129,7 +129,6 @@ function getDefaultBidderFn (bidder) {
       return bid
     },
     pubmatic: function(bid, data, acEnabled) {
-      let dataUpdated = false;
       let segmentData = [];
       data.ac.forEach(item => {
         segmentData.push({ id: item });

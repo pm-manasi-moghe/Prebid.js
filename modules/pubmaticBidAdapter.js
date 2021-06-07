@@ -114,7 +114,7 @@ const FLOC_FORMAT = {
   'SEGMENT': 2
 }
 
-const PERMUTIVE_SEGMENT_NAME = "permutiveDataProvider.com";
+const PERMUTIVE_SEGMENT_NAME = 'permutiveDataProvider.com';
 // BB stands for Blue BillyWig
 const BB_RENDERER = {
   bootstrapPlayer: function(bid) {
@@ -740,6 +740,8 @@ function _addFloorFromFloorModule(impObj, bid) {
 }
 
 function _populateSegmentDataIfAvailable(fpdUserData, segmentData) {
+  // fpdUserData - data set from global and bidder level configs
+  // segmentData - data set from permutive
   if (!fpdUserData.data && segmentData.length > 0) {
     fpdUserData.data = [{
       name: PERMUTIVE_SEGMENT_NAME,
@@ -747,9 +749,8 @@ function _populateSegmentDataIfAvailable(fpdUserData, segmentData) {
     }]
   }
   for (var id in fpdUserData.data) {
-    if (fpdUserData.data[id].name === PERMUTIVE_SEGMENT_NAME)
-    {
-      var mergedArr = utils.removeDuplicatesFromObjectArray(fpdUserData.data[id].segment.concat(segmentData), "id");
+    if (fpdUserData.data[id].name === PERMUTIVE_SEGMENT_NAME) {
+      var mergedArr = utils.removeDuplicatesFromObjectArray(fpdUserData.data[id].segment.concat(segmentData), 'id');
       fpdUserData.data[id].segment = mergedArr;
     }
   }
@@ -1120,19 +1121,6 @@ export const spec = {
       utils.mergeDeep(payload, {user: commonFpd.user});
     }
 
-  
-
-    //reset the 'isDataUpdated' flag set from permutive adapter
-
-   /*var isDataUpdated = utils.getNestedDataFromObject(config.getBidderConfig(), 'pubmatic', 'isDataUpdated');
-   if (isDataUpdated !== undefined) {
-    config.setBidderConfig({
-      bidders: ['pubmatic'],
-      config: {
-        isDataUpdated: false
-      }
-    })
-   }*/
 
     // Note: Do not move this block up
     // if site object is set in Prebid config then we need to copy required fields from site into app and unset the site object
