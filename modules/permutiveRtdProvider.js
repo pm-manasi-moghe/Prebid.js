@@ -8,7 +8,7 @@
 import { getGlobal } from '../src/prebidGlobal.js'
 import { submodule } from '../src/hook.js'
 import { getStorageManager } from '../src/storageManager.js'
-import { deepSetValue, deepAccess, isFn, mergeDeep, logError, getNestedDataFromObject } from '../src/utils.js'
+import { deepSetValue, deepAccess, isFn, mergeDeep, logError } from '../src/utils.js'
 import includes from 'core-js-pure/features/array/includes.js'
 import { config } from '../src/config.js';
 
@@ -129,54 +129,20 @@ function getDefaultBidderFn (bidder) {
       return bid
     },
     pubmatic: function(bid, data, acEnabled) {
-      var existingData = config.getBidderConfig() && config.getBidderConfig()['pubmatic']; // read existing bidder level configs if any
-      var dataUpdated = existingData && existingData.isDataUpdated || false;
-      var permutiveId = "permutiveDataProvider.com";
-      var prmObject = {
-        name: permutiveId,
-        segment: []
-      };
-      var dt = [];
-
-      if (!dataUpdated) {
-        existingData = getNestedDataFromObject(existingData, 'ortb2', 'user', 'data');
-        for (var index in existingData) {
-          if (existingData[index].name) {
-            if (existingData[index].name === permutiveId) { //add data for permutive dataprovider in prmObject
-              prmObject.segment = prmObject.segment.concat(existingData[index]['segment']);
-            } else { // push data for other data providers in respective objects
-              dt.push({
-                name: existingData[index].name,
-                segment: existingData[index].segment
-              })
-            }
-          } else { // if data doesnt have a name specified, add it in separate object
-            dt.push({ segment: existingData[index].segment })
-          }
-        }
-
-        // add AC specific segments in prmObject
-        if (acEnabled && data.ac && data.ac.length > 0) {
-          for (var index in data.ac) {
-            prmObject.segment.push({ id: data.ac[index] });
-          }
-          dt = dt.concat(prmObject);
-        }
-
-        if (!dataUpdated && dt && dt.length > 0) {
-          getGlobal().setBidderConfig({
-           bidders: ['pubmatic'],
-            config: {
-              isDataUpdated: true,
-              ortb2: {
-                user: {
-                  data: dt
-                }
-              }
-            }
-          });
-        }
+      let existingData = config.getBidderConfig(); // read existing bidder level configs if any
+      let dataUpdated = false;
+      let segmentData = [];
+      if (Object.keys(existingData).length > 0) {
+        existingData = existingData['pubmatic'];
+        dataUpdated = existingData.isDataUpdated || false;
       }
+      if (!dataUpdated) {
+        data.ac.forEach(item => {
+          segmentData.push({ id: item });
+        });
+        deepSetValue(bid, 'params.permutiveData', segmentData)
+      }
+        
     }
   }
 

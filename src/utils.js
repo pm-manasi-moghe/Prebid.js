@@ -1289,6 +1289,19 @@ export function cyrb53Hash(str, seed = 0) {
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString();
 }
 
-export function getNestedDataFromObject(obj, ...args) {
+/*export function getNestedDataFromObject(obj, ...args) {
   return args.reduce((obj, level) => obj && obj[level], obj);
+}
+*/
+export function removeDuplicatesFromObjectArray(array, key) {
+  // function to remove duplicates from a singel level object array
+  // object type in array is  { id: value }
+  for(var i=0; i<array.length; ++i) {
+    for(var j=i+1; j<array.length; ++j) {
+        if(array[i][key] === array[j][key]) {
+            array.splice(j--, 1);
+          }
+    }
+  }
+  return array;
 }

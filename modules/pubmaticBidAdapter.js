@@ -737,6 +737,23 @@ function _addFloorFromFloorModule(impObj, bid) {
   impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : UNDEFINED);
 }
 
+function _populateSegmentDataIfAvailable(fpdUserData, segmentData) {
+  if (!fpdUserData.data && segmentData.length > 0) {
+    fpdUserData.data = [{
+      name: 'permutiveDataProvider.com',
+      segment: []
+    }]
+  }
+  for (var id in fpdUserData.data) {
+    if (fpdUserData.data[id].name === "permutiveDataProvider.com")
+    {
+      //var mergedArr = fpdUserData.data[id].segment.concat(segmentData).unique();
+      var mergedArr = utils.removeDuplicatesFromArray(fpdUserData.data[id].segment.concat(segmentData));
+      fpdUserData.data[id].segment = mergedArr;
+    }
+  }
+}
+
 function _getFlocId(validBidRequests, flocFormat) {
   var flocIdObject = null;
   var flocId = utils.deepAccess(validBidRequests, '0.userId.flocId');
@@ -1088,12 +1105,33 @@ export const spec = {
     _handleFlocId(payload, validBidRequests);
     // First Party Data
     const commonFpd = config.getConfig('ortb2') || {};
+    const segmentData = bid.params.permutiveData || undefined;
+    _populateSegmentDataIfAvailable(commonFpd.user, segmentData);
+
     if (commonFpd.site) {
       utils.mergeDeep(payload, {site: commonFpd.site});
     }
+    if (segmentData && segmentData.data) {
+      commonFpd.user.data = segmentData.data;
+    }
+
     if (commonFpd.user) {
       utils.mergeDeep(payload, {user: commonFpd.user});
     }
+
+  
+
+    //reset the 'isDataUpdated' flag set from permutive adapter
+
+   /*var isDataUpdated = utils.getNestedDataFromObject(config.getBidderConfig(), 'pubmatic', 'isDataUpdated');
+   if (isDataUpdated !== undefined) {
+    config.setBidderConfig({
+      bidders: ['pubmatic'],
+      config: {
+        isDataUpdated: false
+      }
+    })
+   }*/
 
     // Note: Do not move this block up
     // if site object is set in Prebid config then we need to copy required fields from site into app and unset the site object
