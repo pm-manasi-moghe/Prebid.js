@@ -129,20 +129,12 @@ function getDefaultBidderFn (bidder) {
       return bid
     },
     pubmatic: function(bid, data, acEnabled) {
-      let existingData = config.getBidderConfig(); // read existing bidder level configs if any
       let dataUpdated = false;
       let segmentData = [];
-      if (Object.keys(existingData).length > 0) {
-        existingData = existingData['pubmatic'];
-        dataUpdated = existingData.isDataUpdated || false;
-      }
-      if (!dataUpdated) {
-        data.ac.forEach(item => {
-          segmentData.push({ id: item });
-        });
-        deepSetValue(bid, 'params.permutiveData', segmentData)
-      }
-        
+      data.ac.forEach(item => {
+        segmentData.push({ id: item });
+      });
+      deepSetValue(bid, 'params.permutiveData', segmentData)
     }
   }
 

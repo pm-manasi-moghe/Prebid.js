@@ -113,6 +113,8 @@ const FLOC_FORMAT = {
   'EID': 1,
   'SEGMENT': 2
 }
+
+const PERMUTIVE_SEGMENT_NAME = "permutiveDataProvider.com";
 // BB stands for Blue BillyWig
 const BB_RENDERER = {
   bootstrapPlayer: function(bid) {
@@ -740,15 +742,14 @@ function _addFloorFromFloorModule(impObj, bid) {
 function _populateSegmentDataIfAvailable(fpdUserData, segmentData) {
   if (!fpdUserData.data && segmentData.length > 0) {
     fpdUserData.data = [{
-      name: 'permutiveDataProvider.com',
+      name: PERMUTIVE_SEGMENT_NAME,
       segment: []
     }]
   }
   for (var id in fpdUserData.data) {
-    if (fpdUserData.data[id].name === "permutiveDataProvider.com")
+    if (fpdUserData.data[id].name === PERMUTIVE_SEGMENT_NAME)
     {
-      //var mergedArr = fpdUserData.data[id].segment.concat(segmentData).unique();
-      var mergedArr = utils.removeDuplicatesFromArray(fpdUserData.data[id].segment.concat(segmentData));
+      var mergedArr = utils.removeDuplicatesFromObjectArray(fpdUserData.data[id].segment.concat(segmentData), "id");
       fpdUserData.data[id].segment = mergedArr;
     }
   }
@@ -1105,7 +1106,7 @@ export const spec = {
     _handleFlocId(payload, validBidRequests);
     // First Party Data
     const commonFpd = config.getConfig('ortb2') || {};
-    const segmentData = bid.params.permutiveData || undefined;
+    const segmentData = utils.deepAccess(validBidRequests, '0.params.permutiveData');
     _populateSegmentDataIfAvailable(commonFpd.user, segmentData);
 
     if (commonFpd.site) {
