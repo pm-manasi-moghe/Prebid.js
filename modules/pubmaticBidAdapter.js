@@ -113,6 +113,8 @@ const FLOC_FORMAT = {
   'EID': 1,
   'SEGMENT': 2
 }
+
+const PERMUTIVE_SEGMENT_NAME = 'fpds.com';
 // BB stands for Blue BillyWig
 const BB_RENDERER = {
   bootstrapPlayer: function(bid) {
@@ -737,6 +739,44 @@ function _addFloorFromFloorModule(impObj, bid) {
   impObj.bidfloor = ((!isNaN(bidFloor) && bidFloor > 0) ? bidFloor : UNDEFINED);
 }
 
+function _populateSegmentDataIfAvailable(fpdUserData = {}, segmentData = []) {
+  // fpdUserData - data set from global and bidder level configs
+  // segmentData - data set from permutive
+  var dataMerged = false;
+
+  if ((!fpdUserData || !fpdUserData.data) && (!segmentData || segmentData.length === 0)) {
+    return;
+  }
+
+  if ((!fpdUserData || !fpdUserData.data) && segmentData.length > 0) {
+    fpdUserData.data = [{
+      name: PERMUTIVE_SEGMENT_NAME,
+      segment: []
+    }]
+  }
+  for (var id in fpdUserData.data) {
+    if (fpdUserData.data[id].name === PERMUTIVE_SEGMENT_NAME) {
+      if (!fpdUserData.data[id].segment) {
+        fpdUserData.data[id].segment = [];
+      }
+      var mergedArr = segmentData && segmentData.length > 0
+        ? utils.removeDuplicatesFromObjectArray(fpdUserData.data[id].segment.concat(segmentData), 'id')
+        : utils.removeDuplicatesFromObjectArray(fpdUserData.data[id].segment, 'id');
+      fpdUserData.data[id].segment = mergedArr;
+      dataMerged = true;
+    }
+  }
+  if (!dataMerged && segmentData.length > 0) {
+    if (!fpdUserData.data) {
+      fpdUserData.data = [];
+    }
+    fpdUserData.data.push({
+      name: PERMUTIVE_SEGMENT_NAME,
+      segment: segmentData
+    });
+  }
+}
+
 function _getFlocId(validBidRequests, flocFormat) {
   var flocIdObject = null;
   var flocId = utils.deepAccess(validBidRequests, '0.userId.flocId');
@@ -1105,6 +1145,9 @@ export const spec = {
     _handleFlocId(payload, validBidRequests);
     // First Party Data
     const commonFpd = config.getConfig('ortb2') || {};
+    const segmentData = utils.deepAccess(validBidRequests, '0.params.permutiveData');
+    _populateSegmentDataIfAvailable(commonFpd.user, segmentData);
+
     if (commonFpd.site) {
       utils.mergeDeep(payload, {site: commonFpd.site});
     }
