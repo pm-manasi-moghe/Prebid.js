@@ -26,7 +26,7 @@ gulp build --modules=rtdModule,pubmaticRtdProvider
 To utilize the PubMatic RTD module, add `realTimeData` with the parameters mentioned below to the Prebid config.
 
 ```js
-const AUCTION_DELAY = 100;
+const AUCTION_DELAY = 500;
 pbjs.setConfig({
 	// rest of the config
 	...,
@@ -38,10 +38,6 @@ pbjs.setConfig({
 			params: {
 				publisherId: `<publisher_id>`, // please contact PubMatic to get a publisherId for yourself
 				profileId: `<profile_id>`,     // please contact PubMatic to get a profileId for yourself
-				endpoint: `<publisher_endpoint>`, // (optional)
-				floorMin: `<floorMin>`, // (optional)
-				enforcement: `<enforcement>`, // (optional)
-				data: `<defaultConfig>` // (optional)
 			}
 		}]
 	}
@@ -59,10 +55,7 @@ pbjs.setConfig({
 | params             | Object  |                                                                |                            |
 | params.publisherId | String  | Publisher ID                                                   |                            |
 | params.profileId   | String  | Profile ID                                                     |                            |
-| params.endpoint    | String  | URL to retrieve floor data (optional)                          |                            |
-| params.floorMin    | Number  | Minimum CPM floor (optional)                                   | `None`                     |
-| params.enforcement | Object  | Enforcement behavior within the Price Floors Module (optional) | `None`                     |
-| params.data        | Object  | Default floor data provided by pubmatic (optional)             | `None`                     |
+
 
 ## What Should Change in the Bid Request?
 

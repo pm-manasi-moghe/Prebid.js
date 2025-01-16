@@ -13,11 +13,18 @@ import { ajax } from '../src/ajax.js';
  */
 import { continueAuction } from './priceFloors.js';
 
-const REAL_TIME_MODULE = 'realTimeData';
-const SUBMODULE_NAME = 'pubmatic';
-const LOG_PRE_FIX = 'PubMatic-Rtd-Provider: ';
-// const GVL_ID = 76;
-// const TCF_PURPOSES = [1, 7]
+// Constants consolidated
+const CONSTANTS = Object.freeze({
+  SUBMODULE_NAME: 'pubmatic',
+  REAL_TIME_MODULE: 'realTimeData',
+  LOG_PRE_FIX: 'PubMatic-Rtd-Provider: '
+});
+
+// Endpoints consolidated
+const ENDPOINTS = Object.freeze({
+  FLOORS_ENDPOINT: `https://hbopenbid.pubmatic.com/pubmaticRtdApi`,
+  GEOLOCATION: `https://ut.pubmatic.com/geo?pubid=5890`
+});
 
 let _timeOfDay = 'evening';
 let _deviceType = 'mobile';
@@ -30,7 +37,6 @@ let _utm = '0';
 let _pubmaticFloorRulesPromise = null;
 
 //Utility Functions
-
 export function getDeviceTypeFromUserAgent(userAgent) {
   const ua = userAgent.toLowerCase();
 
@@ -111,7 +117,6 @@ export function getOsFromUserAgent(userAgent) {
 }
 
 //Getter-Setter Functions
-
 export function getBrowser() {
   return _browser;
 }
@@ -211,7 +216,7 @@ export const setFloorsConfig = (data) => {
     const floorsConfig = getFloorsConfig(data);
     conf.setConfig(floorsConfig);
   }else{
-    logMessage(LOG_PRE_FIX + 'The fetched floors data is empty.');
+    logMessage(CONSTANTS.LOG_PRE_FIX + 'The fetched floors data is empty.');
   }
 };
 
@@ -219,24 +224,24 @@ export const setPriceFloors = async () => {
   try {
     const apiResponse = await fetchFloorRules();
     if (!apiResponse) {
-      logError(LOG_PRE_FIX + 'Error while fetching floors: Empty response');
+      logError(CONSTANTS.LOG_PRE_FIX + 'Error while fetching floors: Empty response');
     }else{
       setFloorsConfig(apiResponse);
     }
   } catch (error) {
-    logError(LOG_PRE_FIX + 'Error while fetching floors:', error);
+    logError(CONSTANTS.LOG_PRE_FIX + 'Error while fetching floors:', error);
   }
 };
 
 export const fetchFloorRules = async () => {
   return new Promise((resolve, reject) => {
-    const url = 'https://hbopenbid.pubmatic.com/pubmaticRtdApi';
+    const url = ENDPOINTS.FLOORS_ENDPOINT;
     
     ajax(url, {
       success: (responseText, response) => {
         try {
           if (!response || !response.response) {
-            reject(new Error(LOG_PRE_FIX + ' Empty response'));
+            reject(new Error(CONSTANTS.LOG_PRE_FIX + ' Empty response'));
             return;
           }
 
@@ -244,11 +249,11 @@ export const fetchFloorRules = async () => {
          
           resolve(apiResponse);
         } catch (error) {
-          reject(new SyntaxError(LOG_PRE_FIX + ' JSON parsing error: ' + error.message));
+          reject(new SyntaxError(CONSTANTS.LOG_PRE_FIX + ' JSON parsing error: ' + error.message));
         }
       },
       error: (error) => {
-        reject(new Error(LOG_PRE_FIX + 'Ajax error: ' + error));
+        reject(new Error(CONSTANTS.LOG_PRE_FIX + 'Ajax error: ' + error));
       },
     });
   });
@@ -256,13 +261,13 @@ export const fetchFloorRules = async () => {
 
 export const getGeolocation = async () => {
   return new Promise((resolve, reject) => {
-    const url = 'https://ut.pubmatic.com/geo?pubid=5890';
+    const url = ENDPOINTS.GEOLOCATION;
     if (url) {
       ajax(url, {
         success: (response) => {
           try {
             if (!response) {
-              logWarn(LOG_PRE_FIX + 'No response from geolocation API');
+              logWarn(CONSTANTS.LOG_PRE_FIX + 'No response from geolocation API');
               resolve(null);
               return;
             }
@@ -271,7 +276,7 @@ export const getGeolocation = async () => {
             try {
               apiResponse = JSON.parse(response);
             } catch (parseError) {
-              logError(LOG_PRE_FIX + 'Error parsing geolocation API response - ', parseError);
+              logError(CONSTANTS.LOG_PRE_FIX + 'Error parsing geolocation API response - ', parseError);
               reject(parseError);
               return;
             }
@@ -281,65 +286,25 @@ export const getGeolocation = async () => {
               setRegion(apiResponse.sc);
               resolve(apiResponse.cc);
             } else {
-              logWarn(LOG_PRE_FIX + 'Invalid response from geolocation API');
+              logWarn(CONSTANTS.LOG_PRE_FIX + 'Invalid response from geolocation API');
               resolve(null);
             }
           } catch (error) {
-            logError(LOG_PRE_FIX + 'Error processing geolocation API response - ', error);
+            logError(CONSTANTS.LOG_PRE_FIX + 'Error processing geolocation API response - ', error);
             reject(error);
           }
         },
         error: (error) => {
-          logError(LOG_PRE_FIX + 'Error calling geolocation API - ', error);
+          logError(CONSTANTS.LOG_PRE_FIX + 'Error calling geolocation API - ', error);
           reject(error);
         },
       });
     } else {
-      logError(LOG_PRE_FIX + 'Invalid geolocation API URL');
+      logError(CONSTANTS.LOG_PRE_FIX + 'Invalid geolocation API URL');
       reject(new Error('Invalid URL'));
     }
   });
 };
-
-/**
- * Checks TCF and USP consents
- * @param {Object} userConsent
- * @returns {boolean}
- */
-// function checkConsent (userConsent) {
-//   let consent
-
-//   if (userConsent) {
-//     if (userConsent.gdpr && userConsent.gdpr.gdprApplies) {
-//       const gdpr = userConsent.gdpr
-
-//       if (gdpr.vendorData) {
-//         const vendor = gdpr.vendorData.vendor
-//         const purpose = gdpr.vendorData.purpose
-
-//         let vendorConsent = false
-//         if (vendor.consents) {
-//           vendorConsent = vendor.consents[GVL_ID]
-//         }
-
-//         if (vendor.legitimateInterests) {
-//           vendorConsent = vendorConsent || vendor.legitimateInterests[GVL_ID]
-//         }
-
-//         const purposes = TCF_PURPOSES.map(id => {
-//           return (purpose.consents && purpose.consents[id]) || (purpose.legitimateInterests && purpose.legitimateInterests[id])
-//         })
-//         const purposesValid = purposes.filter(p => p === true).length === TCF_PURPOSES.length
-//         consent = vendorConsent && purposesValid
-//       }
-//     } else if (userConsent.usp) {
-//       const usp = userConsent.usp
-//       consent = usp[1] !== 'N' && usp[2] !== 'Y'
-//     }
-//   }
-
-//   return consent
-// }
 
 /**
  * Initialize the Pubmatic RTD Module.
@@ -352,22 +317,22 @@ function init(config, _userConsent) {
   const profileId = config?.params?.profileId;
 
   if (!publisherId) {
-    logError(LOG_PRE_FIX + 'Missing publisher Id.');
+    logError(CONSTANTS.LOG_PRE_FIX + 'Missing publisher Id.');
     return false;
   }
 
   if (publisherId && !isStr(publisherId)) {
-    logError(LOG_PRE_FIX + 'Publisher Id should be string.');
+    logError(CONSTANTS.LOG_PRE_FIX + 'Publisher Id should be string.');
     return false;
   }
 
   if (!profileId) {
-    logError(LOG_PRE_FIX + 'Missing profile Id.');
+    logError(CONSTANTS.LOG_PRE_FIX + 'Missing profile Id.');
     return false;
   }
 
   if (profileId && !isStr(profileId)) {
-    logError(LOG_PRE_FIX + 'Profile Id should be string.');
+    logError(CONSTANTS.LOG_PRE_FIX + 'Profile Id should be string.');
     return false;
   }
 
@@ -388,31 +353,6 @@ function init(config, _userConsent) {
  * @param {Object} userConsent
  */
 
-// With CMP FLow
-// function getBidRequestData(reqBidsConfigObj, onDone, config, userConsent) {
-
-//   //check user consent
-//   const hasConsent = checkConsent(userConsent)
-//   const initialize = hasConsent !== false
-
-// if(initialize){
-//   _pubmaticFloorRulesPromise = setPriceFloors(config);
-//   __pubmaticGeolocationPromise__ = getGeolocation();
-//   Promise.allSettled([_pubmaticFloorRulesPromise,__pubmaticGeolocationPromise__]).then(() => {
-//   const hookConfig = {
-//     reqBidsConfigObj,
-//     context: this,
-//     nextFn: ()=> true,
-//     haveExited: false,
-//     timer: null
-//   };
-//   continueAuction(hookConfig);
-//   onDone();
-// });
-// }
-// }
-
-// Without CMP FLow
 const getBidRequestData = (() => {
   let floorsAttached = false;
   return (reqBidsConfigObj, onDone) => {
@@ -440,13 +380,13 @@ export const pubmaticSubmodule = {
    * used to link submodule with realTimeData
    * @type {string}
    */
-  name: SUBMODULE_NAME,
+  name: CONSTANTS.SUBMODULE_NAME,
   init: init,
   getBidRequestData,
 };
 
 export function registerSubModule() {
-  submodule(REAL_TIME_MODULE, pubmaticSubmodule);
+  submodule(CONSTANTS.REAL_TIME_MODULE, pubmaticSubmodule);
 }
 
 registerSubModule();
