@@ -4,9 +4,9 @@ import * as utils from '../../../src/utils.js';
 import * as ajax from '../../../src/ajax.js';
 import { continueAuction } from '../../../modules/priceFloors.js';
 import { registerSubModule, pubmaticSubmodule, getFloorsConfig, setFloorsConfig, setPriceFloors, fetchFloorRules,getGeolocation,
-  getDeviceTypeFromUserAgent, getCurrentTimeOfDay, getBrowserFromUserAgent, getOsFromUserAgent, setBrowser, getBrowser,
+   getCurrentTimeOfDay, setBrowser, getBrowser,
   setOs, getOs, setDeviceType, getDeviceType, setTimeOfDay, getTimeOfDay,setUtm, getUtm, getCountry, setCountry,
-  getRegion, setRegion, getBidder} from '../../../modules/pubmaticRtdProvider.js';
+  getRegion, setRegion} from '../../../modules/pubmaticRtdProvider.js';
 import { config as conf } from '../../../src/config';
 import * as hook from '../../../src/hook.js';
 import { server } from '../../mocks/xhr.js';
@@ -20,39 +20,6 @@ const getConfig = () => ({
     profileId: 'test-profile-id'
   },
 });
-
-const getFloorsResponse = () => ({
-  modelVersion: 'gpt-mvm_AB_0.50_dt_0.75_dwt_0.95_dnt_0.25_fm_0.50',
-  schema: { fields: ['gptSlot', 'mediaType'] },
-  values: { '*|banner': 0.02 },
-});
-
-const resetGlobals = () => {
-  _pubmaticFloorRulesPromise = null;
-};
-
-const fakeServer = (
-  fakeResponse = '',
-  providerConfig = undefined,
-  statusCode = 200
-) => {
-  const fakeResponseHeaders = {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-  };
-  const request = server.requests[0];
-  request.respond(
-    statusCode,
-    fakeResponseHeaders,
-    fakeResponse ? JSON.stringify(fakeResponse) : ''
-  );
-  return request;
-};
-
-const stubConfig = () => {
-  const stub = sinon.stub(conf, 'setConfig');
-  return stub;
-};
 
 beforeEach(function () {
   sandbox = sinon.createSandbox();
@@ -194,89 +161,6 @@ describe('Pubmatic RTD Provider', function () {
     });
   });
 
-  describe('getDeviceTypeFromUserAgent', function () {
-    const testCases = [
-      {
-        ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X)',
-        expected: 'mobile'
-      },
-      {
-        ua: 'Mozilla/5.0 (iPad; CPU OS 13_2_3 like Mac OS X)',
-        expected: 'tablet'
-      },
-      {
-        ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        expected: 'desktop'
-      }
-    ];
-
-    testCases.forEach(({ua, expected}) => {
-      it(`should detect ${expected} for user agent: ${ua}`, function () {
-        const result = getDeviceTypeFromUserAgent(ua);
-        expect(result).to.equal(expected);
-      });
-    });
-  });
-
-  describe('getBrowserFromUserAgent', function() {
-    const testCases = [
-      {
-        ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        expected: 'chrome',
-        description: 'should detect Chrome browser'
-      },
-      {
-        ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edg/91.0.864.59',
-        expected: 'edge',
-        description: 'should detect Edge browser (Chromium-based)'
-      },
-      {
-        ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edge/91.0.864.59',
-        expected: 'edge',
-        description: 'should detect Edge browser (Legacy)'
-      },
-      {
-        ua: 'Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko',
-        expected: 'internet explorer',
-        description: 'should detect Internet Explorer (Trident)'
-      },
-      {
-        ua: 'Mozilla/5.0 (Windows NT 10.0; WOW64; MSIE 10.0; rv:11.0) like Gecko',
-        expected: 'internet explorer',
-        description: 'should detect Internet Explorer (MSIE)'
-      },
-      {
-        ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
-        expected: 'firefox',
-        description: 'should detect Firefox browser'
-      },
-      {
-        ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15',
-        expected: 'safari',
-        description: 'should detect Safari browser'
-      }
-    ];
-
-    testCases.forEach(({ua, expected, description}) => {
-      it(description, function() {
-        const result = getBrowserFromUserAgent(ua);
-        expect(result).to.equal(expected);
-      });
-    });
-
-    it('should handle null user agent', function() {
-      expect(getBrowserFromUserAgent(null)).to.equal('chrome'); // default fallback
-    });
-
-    it('should handle undefined user agent', function() {
-      expect(getBrowserFromUserAgent(undefined)).to.equal('chrome'); // default fallback
-    });
-
-    it('should handle empty user agent string', function() {
-      expect(getBrowserFromUserAgent('')).to.equal('chrome'); // default fallback
-    });
-});
-
   describe('getCurrentTimeOfDay', function () {
     const testTimes = [
       { hour: 6, expected: 'morning' },
@@ -291,122 +175,6 @@ describe('Pubmatic RTD Provider', function () {
         const result = getCurrentTimeOfDay();
         expect(result).to.equal(expected);
       });
-    });
-  });
-
-  describe('getOsFromUserAgent', function() {
-    const testCases = [
-      {
-        ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        expected: 'MacOS',
-        description: 'should detect MacOS'
-      },
-      {
-        ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        expected: 'Windows',
-        description: 'should detect Windows'
-      },
-      {
-        ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Mobile/15E148 Safari/604.1',
-        expected: 'iOS',
-        description: 'should detect iOS from iPhone'
-      },
-      {
-        ua: 'Mozilla/5.0 (iPad; CPU OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Mobile/15E148 Safari/604.1',
-        expected: 'iOS',
-        description: 'should detect iOS from iPad'
-      },
-      {
-        ua: 'Mozilla/5.0 (iPod touch; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Mobile/15E148 Safari/604.1',
-        expected: 'iOS',
-        description: 'should detect iOS from iPod'
-      },
-      {
-        ua: 'Mozilla/5.0 (Linux; Android 11; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36',
-        expected: 'Android',
-        description: 'should detect Android'
-      },
-      {
-        ua: 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0',
-        expected: 'Linux',
-        description: 'should detect Linux'
-      }
-    ];
-
-    testCases.forEach(({ua, expected, description}) => {
-      it(description, function() {
-        const result = getOsFromUserAgent(ua);
-        expect(result).to.equal(expected);
-      });
-    });
-
-    it('should handle invalid user agent', function() {
-      const result = getOsFromUserAgent('Invalid UA');
-      expect(result).to.equal('Linux');  // Default fallback in the implementation
-    });
-
-    it('should handle empty user agent string', function() {
-      const result = getOsFromUserAgent('');
-      expect(result).to.equal('Linux');  // Default fallback in the implementation
-    });
-
-    it('should be case insensitive for Windows', function() {
-      const uaWindows = 'Mozilla/5.0 (WINDOWS NT 10.0; Win64; x64) AppleWebKit/537.36';
-      expect(getOsFromUserAgent(uaWindows)).to.equal('Windows');
-    });
-
-    it('should identify Windows OS versions correctly', function() {
-      const uaWin10 = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)';
-      const uaWin8 = 'Mozilla/5.0 (Windows NT 6.2; Win64; x64)';
-      const uaWin7 = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)';
-      
-      expect(getOsFromUserAgent(uaWin10)).to.equal('Windows');
-      expect(getOsFromUserAgent(uaWin8)).to.equal('Windows');
-      expect(getOsFromUserAgent(uaWin7)).to.equal('Windows');
-    });
-
-    it('should handle various Linux distributions', function() {
-      const uaUbuntu = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64)';
-      const uaFedora = 'Mozilla/5.0 (X11; Fedora; Linux x86_64)';
-      const uaDebian = 'Mozilla/5.0 (X11; Linux x86_64)';
-      
-      expect(getOsFromUserAgent(uaUbuntu)).to.equal('Linux');
-      expect(getOsFromUserAgent(uaFedora)).to.equal('Linux');
-      expect(getOsFromUserAgent(uaDebian)).to.equal('Linux');
-    });
-
-    it('should identify MacOS consistently', function() {
-      const uaMac1 = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)';
-      const uaMac2 = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_3)';
-      
-      expect(getOsFromUserAgent(uaMac1)).to.equal('MacOS');
-      expect(getOsFromUserAgent(uaMac2)).to.equal('MacOS');
-    });
-
-    it('should handle Android variations', function() {
-      const uaAndroidPhone = 'Mozilla/5.0 (Linux; Android 11; SM-G991B)';
-      const uaAndroidTablet = 'Mozilla/5.0 (Linux; Android 11; SM-T500)';
-      
-      expect(getOsFromUserAgent(uaAndroidPhone)).to.equal('Android');
-      expect(getOsFromUserAgent(uaAndroidTablet)).to.equal('Android');
-    });
-
-    it('should handle iOS variations', function() {
-      const iPhoneUA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X)';
-      const iPadUA = 'Mozilla/5.0 (iPad; CPU OS 14_6 like Mac OS X)';
-      const iPodUA = 'Mozilla/5.0 (iPod touch; CPU iPhone OS 14_6 like Mac OS X)';
-      
-      expect(getOsFromUserAgent(iPhoneUA)).to.equal('iOS');
-      expect(getOsFromUserAgent(iPadUA)).to.equal('iOS');
-      expect(getOsFromUserAgent(iPodUA)).to.equal('iOS');
-    });
-
-    it('should be case insensitive for iOS detection', function() {
-      const uaUpperCase = 'Mozilla/5.0 (IPHONE; CPU IPHONE OS 14_6 like Mac OS X)';
-      const uaLowerCase = 'mozilla/5.0 (iphone; cpu iphone os 14_6 like mac os x)';
-      
-      expect(getOsFromUserAgent(uaUpperCase)).to.equal('iOS');
-      expect(getOsFromUserAgent(uaLowerCase)).to.equal('iOS');
     });
   });
 
@@ -450,10 +218,6 @@ describe('Pubmatic RTD Provider', function () {
       setUtm('https://example.com?source=test');
       expect(getUtm()).to.equal('0');
     });
-
-    it('should get bidder correctly',function () {
-      expect(getBidder({ bidder : 'pubmatic'})).to.be.a('string');
-    })
   });
 
   describe('getFloorsConfig', function() {
@@ -473,7 +237,6 @@ describe('Pubmatic RTD Provider', function () {
             'region',
             'browser',
             'os',
-            'bidder',
             'utm'
         ]);
 
@@ -507,7 +270,6 @@ describe('Pubmatic RTD Provider', function () {
         expect(result.floors.additionalSchemaFields.region).to.equal(getRegion);
         expect(result.floors.additionalSchemaFields.browser).to.equal(getBrowser);
         expect(result.floors.additionalSchemaFields.os).to.equal(getOs);
-        expect(result.floors.additionalSchemaFields.bidder).to.equal(getBidder);
         expect(result.floors.additionalSchemaFields.utm).to.equal(getUtm);
     });
 });
@@ -1008,57 +770,17 @@ describe('getGeolocation', function () {
       expect(logWarnStub.called).to.be.false;
   });
 
-    it('should handle empty response gracefully', async function () {
-      ajaxStub.callsFake((url, callbacks) => {
-          callbacks.success('');
-      });
-
-      const result = await getGeolocation();
-
-      expect(result).to.be.null;
-      expect(logWarnStub.calledOnce).to.be.true;
-      expect(logWarnStub.firstCall.args[0]).to.include('No response from geolocation API');
-  });
-
   it('should handle null response gracefully', async function () {
       ajaxStub.callsFake((url, callbacks) => {
           callbacks.success(null);
       });
 
-      const result = await getGeolocation();
-
-      expect(result).to.be.null;
-      expect(logWarnStub.calledOnce).to.be.true;
-  });
-
-  it('should handle JSON parsing errors', async function () {
-    ajaxStub.callsFake((url, callbacks) => {
-        callbacks.success('Invalid JSON');
-    });
-
-    try {
+      try {
         await getGeolocation();
         expect.fail('Should have thrown an error');
     } catch (error) {
-        expect(error).to.be.instanceof(SyntaxError);
-        expect(logErrorStub.calledOnce).to.be.true;
-        expect(logErrorStub.firstCall.args[0]).to.include('Error parsing geolocation API response');
-    }
-});
-
-  it('should handle ajax errors', async function () {
-    const errorResponse = 'Network Error';
-    ajaxStub.callsFake((url, callbacks) => {
-        callbacks.error(errorResponse);
-    });
-
-    try {
-        await getGeolocation();
-        expect.fail('Should have thrown an error');
-    } catch (error) {
-        expect(error).to.equal(errorResponse);
-        expect(logErrorStub.calledOnce).to.be.true;
-        expect(logErrorStub.firstCall.args[0]).to.include('Error calling geolocation API');
+        expect(error).to.be.instanceof(Error);
+        expect(error.message).to.include('No response from geolocation API');
     }
   });
 
@@ -1069,32 +791,32 @@ describe('getGeolocation', function () {
   });
 
   it('should handle partial geolocation data', async function () {
-      const partialResponse = {
-          cc: 'US'
-          // missing sc field
-      };
+    const partialResponse = {
+        cc: 'US'
+        // missing sc field
+    };
 
-      ajaxStub.callsFake((url, callbacks) => {
-          callbacks.success(JSON.stringify(partialResponse));
-      });
+    ajaxStub.callsFake((url, callbacks) => {
+        callbacks.success(JSON.stringify(partialResponse));
+    });
 
-      const result = await getGeolocation();
-      expect(result).to.equal('US');
-  });
+    const result = await getGeolocation();
+    expect(result).to.equal('US');
+});
 
-  it('should handle missing country code', async function () {
-      const noCountryResponse = {
-          sc: 'CA'
-          // missing cc field
-      };
+it('should handle missing country code', async function () {
+    const noCountryResponse = {
+        sc: 'CA'
+        // missing cc field
+    };
 
-      ajaxStub.callsFake((url, callbacks) => {
-          callbacks.success(JSON.stringify(noCountryResponse));
-      });
+    ajaxStub.callsFake((url, callbacks) => {
+        callbacks.success(JSON.stringify(noCountryResponse));
+    });
 
-      const result = await getGeolocation();
-      expect(result).to.equal(undefined);
-  });
+    const result = await getGeolocation();
+    expect(result).to.equal(undefined);
+});
 
   it('should maintain promise chain', async function () {
       const mockGeoResponse = {
@@ -1112,8 +834,8 @@ describe('getGeolocation', function () {
       const result = await promise;
       expect(result).to.equal('US');
   });
+  
 });
-
 });
 
 

@@ -1,7 +1,8 @@
 import { submodule } from '../src/hook.js';
-import { logError, isStr, logWarn, logMessage } from '../src/utils.js';
+import { logError, isStr, logMessage } from '../src/utils.js';
 import {config as conf} from '../src/config.js';
 import { ajax } from '../src/ajax.js';
+import { getDeviceType as fetchDeviceType, getBrowser as fetchBrowser, getOS } from '../libraries/userAgentUtils/index.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -17,39 +18,30 @@ import { continueAuction } from './priceFloors.js';
 const CONSTANTS = Object.freeze({
   SUBMODULE_NAME: 'pubmatic',
   REAL_TIME_MODULE: 'realTimeData',
-  LOG_PRE_FIX: 'PubMatic-Rtd-Provider: '
+  LOG_PRE_FIX: 'PubMatic-Rtd-Provider: ',
+  UTM_VALUES : {
+    TRUE : '1',
+    FALSE : '0'
+  }
 });
 
 // Endpoints consolidated
 const ENDPOINTS = Object.freeze({
-  FLOORS_ENDPOINT: `https://hbopenbid.pubmatic.com/pubmaticRtdApi`,
+  FLOORS_ENDPOINT: `https://owsdk-stagingams.pubmatic.com:8443/openwrap/bidfloor/rtd_floors.json`,
   GEOLOCATION: `https://ut.pubmatic.com/geo?pubid=5890`
 });
 
-let _timeOfDay = 'evening';
-let _deviceType = 'mobile';
-let _country = 'Australia';
-let _region = 'Delhi';
-let _browser = 'Chrome';
-let _os = 'Android';
-let _utm = '0';
+let _timeOfDay;
+let _deviceType;
+let _country;
+let _region;
+let _browser;
+let _os;
+let _utm;
 
 let _pubmaticFloorRulesPromise = null;
 
 //Utility Functions
-export function getDeviceTypeFromUserAgent(userAgent) {
-  const ua = userAgent.toLowerCase();
-
-  if (/mobile|iphone|ipod|android.*mobile|blackberry|windows phone/.test(ua)) {
-    return 'mobile';
-  }
-  if (/tablet|ipad|android(?!.*mobile)/.test(ua)) {
-    return 'tablet';
-  }
-
-  return 'desktop';
-}
-
 export function getCurrentTimeOfDay() {
   const currentHour = new Date().getHours();
 
@@ -64,65 +56,13 @@ export function getCurrentTimeOfDay() {
   }
 }
 
-export function getBrowserFromUserAgent(userAgent) {
-  if (!userAgent || typeof userAgent !== 'string') {
-    return 'chrome';
-  }
-
-  userAgent = userAgent.toLowerCase();
-
-  if (userAgent.includes('edge/') || userAgent.includes('edg/')) {
-    return 'edge';
-  }
-  if (userAgent.includes('msie') || userAgent.includes('trident/')) {
-    return 'internet explorer';
-  }
-  if (userAgent.includes('chrome')) {
-    return 'chrome';
-  }
-  if (userAgent.includes('firefox')) {
-    return 'firefox';
-  }
-  if (userAgent.includes('safari')) {
-    return 'safari';
-  }
-
-  return 'chrome'; 
-}
-
-export function getOsFromUserAgent(userAgent) {
-  if (!userAgent || typeof userAgent !== 'string') {
-    return 'Linux';
-  }
-
-  if (/iphone|ipad|ipod/i.test(userAgent)) {
-    return 'iOS';
-  }
-  if (/android/i.test(userAgent)) {
-    return 'Android';
-  }
-  if (/macintosh|mac os x/i.test(userAgent)) {
-    return 'MacOS'; 
-  }
-
-  if (/windows|win32|win64/i.test(userAgent)) {
-    return 'Windows';  
-  }
-
-  if (/linux/i.test(userAgent)) {
-    return 'Linux';  
-  }
-
-  return 'Linux'; 
-}
-
 //Getter-Setter Functions
 export function getBrowser() {
   return _browser;
 }
 
 export function setBrowser() {
-  let browser = getBrowserFromUserAgent(navigator.userAgent);
+  let browser = fetchBrowser().toString();
   _browser = browser;
 }
 
@@ -131,7 +71,7 @@ export function getOs() {
 }
 
 export function setOs() {
-  let os = getOsFromUserAgent(navigator.userAgent);
+  let os = getOS().toString();
   _os = os;
 }
 
@@ -140,7 +80,7 @@ export function getDeviceType() {
 }
 
 export function setDeviceType() {
-  let deviceType = getDeviceTypeFromUserAgent(navigator.userAgent);
+  let deviceType = fetchDeviceType().toString();
   _deviceType = deviceType;
 }
 
@@ -169,17 +109,13 @@ export function setRegion(value) {
   _region = value;
 }
 
-export function getBidder(bidderDetail) {
-  return bidderDetail?.bidder;
-}
-
 export function getUtm() {
   return _utm;
 }
 
 export function setUtm(url) {
   const queryString = url?.split('?')[1];
-  _utm = queryString?.includes('utm') ? '1' : '0';
+  _utm = queryString?.includes('utm') ? CONSTANTS.UTM_VALUES.TRUE : CONSTANTS.UTM_VALUES.FALSE;
 }
 
 export const getFloorsConfig = (apiResponse) => {
@@ -202,7 +138,6 @@ export const getFloorsConfig = (apiResponse) => {
         region: getRegion,
         browser: getBrowser,
         os: getOs,
-        bidder: getBidder,
         utm: getUtm
       }
     },
@@ -246,7 +181,6 @@ export const fetchFloorRules = async () => {
           }
 
           const apiResponse = JSON.parse(response.response);
-         
           resolve(apiResponse);
         } catch (error) {
           reject(new SyntaxError(CONSTANTS.LOG_PRE_FIX + ' JSON parsing error: ' + error.message));
@@ -259,52 +193,34 @@ export const fetchFloorRules = async () => {
   });
 };
 
-export const getGeolocation = async () => {
+export const getGeolocation = async () =>{
   return new Promise((resolve, reject) => {
     const url = ENDPOINTS.GEOLOCATION;
-    if (url) {
+
       ajax(url, {
         success: (response) => {
           try {
-            if (!response) {
-              logWarn(CONSTANTS.LOG_PRE_FIX + 'No response from geolocation API');
-              resolve(null);
-              return;
-            }
-
-            let apiResponse;
-            try {
-              apiResponse = JSON.parse(response);
-            } catch (parseError) {
-              logError(CONSTANTS.LOG_PRE_FIX + 'Error parsing geolocation API response - ', parseError);
-              reject(parseError);
-              return;
-            }
-
-            if (apiResponse) {
-              setCountry(apiResponse.cc);
-              setRegion(apiResponse.sc);
+            if (response) {
+              const apiResponse = JSON.parse(response);
+              setCountry(apiResponse?.cc);
+              setRegion(apiResponse?.sc);
               resolve(apiResponse.cc);
             } else {
-              logWarn(CONSTANTS.LOG_PRE_FIX + 'Invalid response from geolocation API');
-              resolve(null);
+              reject(new Error(CONSTANTS.LOG_PRE_FIX + ' No response from geolocation API '));
             }
           } catch (error) {
-            logError(CONSTANTS.LOG_PRE_FIX + 'Error processing geolocation API response - ', error);
+            logError(LOG_PRE_FIX,'Error geolocation API - ', error);
             reject(error);
           }
         },
-        error: (error) => {
-          logError(CONSTANTS.LOG_PRE_FIX + 'Error calling geolocation API - ', error);
-          reject(error);
+        error: (response) => {
+          logError(LOG_PRE_FIX,'Error geolocation API - ', response);
+          reject(response);
         },
       });
-    } else {
-      logError(CONSTANTS.LOG_PRE_FIX + 'Invalid geolocation API URL');
-      reject(new Error('Invalid URL'));
-    }
-  });
-};
+    
+  }); 
+}
 
 /**
  * Initialize the Pubmatic RTD Module.
@@ -316,25 +232,19 @@ function init(config, _userConsent) {
   const publisherId = config?.params?.publisherId;
   const profileId = config?.params?.profileId;
 
-  if (!publisherId) {
-    logError(CONSTANTS.LOG_PRE_FIX + 'Missing publisher Id.');
+  if (!publisherId || !isStr(publisherId)) {
+    logError(CONSTANTS.LOG_PRE_FIX + (!publisherId
+    ? 'Missing publisher Id.'
+    : 'Publisher Id should be a string.'));
     return false;
-  }
+    }
 
-  if (publisherId && !isStr(publisherId)) {
-    logError(CONSTANTS.LOG_PRE_FIX + 'Publisher Id should be string.');
+  if (!profileId || !isStr(profileId)) {
+    logError(CONSTANTS.LOG_PRE_FIX + (!profileId
+    ? 'Missing profile Id.'
+    : 'Profile Id should be string.'));
     return false;
-  }
-
-  if (!profileId) {
-    logError(CONSTANTS.LOG_PRE_FIX + 'Missing profile Id.');
-    return false;
-  }
-
-  if (profileId && !isStr(profileId)) {
-    logError(CONSTANTS.LOG_PRE_FIX + 'Profile Id should be string.');
-    return false;
-  }
+    }  
 
   _pubmaticFloorRulesPromise = setPriceFloors(config);
   getGeolocation();
