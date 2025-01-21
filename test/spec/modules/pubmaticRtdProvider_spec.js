@@ -9,7 +9,6 @@ import { registerSubModule, pubmaticSubmodule, getFloorsConfig, setFloorsConfig,
   getRegion, setRegion} from '../../../modules/pubmaticRtdProvider.js';
 import { config as conf } from '../../../src/config';
 import * as hook from '../../../src/hook.js';
-import { server } from '../../mocks/xhr.js';
 
 let _pubmaticFloorRulesPromise =  null;
 let clock;
@@ -224,9 +223,6 @@ describe('Pubmatic RTD Provider', function () {
     it('should return correct config structure', function() {
         const result = getFloorsConfig({});
         
-        // Test the static parts of the config
-        expect(result.floors.auctionDelay).to.equal(600);
-        expect(result.floors.enforcement).to.deep.equal({ enforceJS: false });
         expect(result.floors.data).to.deep.equal({});
 
         // Verify the additionalSchemaFields structure
@@ -256,8 +252,6 @@ describe('Pubmatic RTD Provider', function () {
         const result = getFloorsConfig(apiResponse);
         
         expect(result.floors.data).to.deep.equal(apiResponse);
-        expect(result.floors.auctionDelay).to.equal(600);
-        expect(result.floors.enforcement).to.deep.equal({ enforceJS: false });
     });
 
     it('should maintain correct function references', function() {
@@ -280,7 +274,7 @@ describe('Pubmatic RTD Provider', function () {
 
       beforeEach(function() {
           logMessageStub = sandbox.stub(utils, 'logMessage');
-          confStub = sandbox.stub(conf, 'setConfig');
+          confStub = sandbox.stub(conf, 'mergeConfig');
       });
 
       it('should set config when valid data is provided', function() {

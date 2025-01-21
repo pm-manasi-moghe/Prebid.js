@@ -119,18 +119,11 @@ export function setUtm(url) {
 }
 
 export const getFloorsConfig = (apiResponse) => {
-  const floor = {
-    auctionDelay: 600,
-    enforcement: {
-      enforceJS: false
-    },
-    data : {
-      ...apiResponse
-    }
-  }
   const floorsConfig = {
     floors: {
-      ...floor,
+      data : {
+        ...apiResponse
+      },
       additionalSchemaFields: {
         deviceType: getDeviceType,
         timeOfDay: getTimeOfDay,
@@ -149,7 +142,7 @@ export const getFloorsConfig = (apiResponse) => {
 export const setFloorsConfig = (data) => {
   if (data && typeof data === 'object' && !Array.isArray(data) && Object.keys(data).length > 0) {
     const floorsConfig = getFloorsConfig(data);
-    conf.setConfig(floorsConfig);
+    conf.mergeConfig(floorsConfig);
   }else{
     logMessage(CONSTANTS.LOG_PRE_FIX + 'The fetched floors data is empty.');
   }
