@@ -607,8 +607,6 @@ function bidRequestedHandler(args) {
 }
 
 function bidResponseHandler(args) {
-  //Todo : Added for Pubmatic RTD Testing (To be Removed)
-  console.log('Pubmatic Analytics Adapter -> Bid Response -> ', args);
   if (!args.requestId) {
     logWarn(LOG_PRE_FIX + 'Got null requestId in bidResponseHandler');
     return;
